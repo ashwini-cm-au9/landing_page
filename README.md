@@ -218,3 +218,103 @@ Free Research Preview. ChatGPT may produce inaccurate information about people, 
 New chat
 
 This code creates a Context and Reducer for your file uploading state, and a component to handle the file upload using tus-js-client. When a file is selected and the "Upload" button
+
+
+
+
+Open sidebar
+New chat
+
+
+User
+Pause and resume button not working in tus-js-client between pages please provide complete full react code,
+
+3 / 3
+
+
+ChatGPT
+To help you with this issue, I'll provide a sample React code that demonstrates how to implement the tus-js-client library to handle file uploads with a pause and resume feature. Here's the code:
+
+javascript
+Copy code
+import React, { useState } from "react";
+import tus from "tus-js-client";
+
+const Upload = () => {
+  const [file, setFile] = useState(null);
+  const [upload, setUpload] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleUpload = () => {
+    setIsUploading(true);
+
+    const upload = new tus.Upload(file, {
+      endpoint: "http://your-tus-server.com/files/",
+      resume: true,
+      chunkSize: 5 * 1024 * 1024, // 5MB chunks
+      retryDelays: [0, 1000, 3000, 5000],
+      metadata: {
+        filename: file.name,
+        filetype: file.type,
+      },
+      onError: (error) => {
+        console.log("Upload failed:", error);
+        setIsUploading(false);
+      },
+      onProgress: (bytesUploaded, bytesTotal) => {
+        const progress = (bytesUploaded / bytesTotal) * 100;
+        setProgress(progress);
+      },
+      onSuccess: () => {
+        console.log("Upload complete!");
+        setIsUploading(false);
+      },
+    });
+
+    setUpload(upload);
+    upload.start();
+  };
+
+  const handlePause = () => {
+    upload.abort();
+    setIsUploading(false);
+  };
+
+  const handleResume = () => {
+    setIsUploading(true);
+    upload.start();
+  };
+
+  return (
+    <div>
+      <input type="file" onChange={handleFileChange} />
+      <button onClick={handleUpload} disabled={!file || isUploading}>
+        Upload
+      </button>
+      {isUploading && (
+        <>
+          <button onClick={handlePause}>Pause</button>
+          <button onClick={handleResume}>Resume</button>
+        </>
+      )}
+      <div>{progress}%</div>
+    </div>
+  );
+};
+
+export default Upload;
+In this code, we define a Upload component that contains the state for the file to be uploaded, the tus-js-client Upload instance, whether the upload is currently in progress, and the progress percentage. The handleFileChange function updates the file state when a file is selected. The handleUpload function creates a new Upload instance with the specified options, sets the upload state to the new instance, and starts the upload. If the upload fails, the onError callback is called and the isUploading state is set to false. If the upload progresses, the onProgress callback is called and the progress state is updated. If the upload completes successfully, the onSuccess callback is called and the isUploading state is set to false.
+
+The handlePause function aborts the current upload and sets the isUploading state to false. The handleResume function starts the upload again
+
+
+Send a message.
+
+···
+
+Free Research Preview. ChatGPT may produce inaccurate information about people, places, or facts. ChatGPT Mar 23 Version
