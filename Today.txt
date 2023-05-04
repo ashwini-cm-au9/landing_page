@@ -1,0 +1,50 @@
+// Initialize tus client
+var client = new tus.Upload(file, {
+  endpoint: "http://localhost:1080/files/",
+  retryDelays: [0, 1000, 3000, 5000],
+  metadata: {
+    filename: file.name,
+    filetype: file.type
+  },
+  resume: true,
+  storeFingerprintForResuming: true,
+  onError: function(error) {
+    console.log("Failed because: " + error);
+  },
+  onProgress: function(bytesUploaded, bytesTotal) {
+    var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2);
+    console.log(bytesUploaded, bytesTotal, percentage + "%");
+  },
+  onSuccess: function() {
+    console.log("Upload finished:", upload.url);
+  }
+});
+
+// Store the upload URL and metadata in local storage
+localStorage.setItem("uploadUrl", client.url);
+localStorage.setItem("uploadMetadata", JSON.stringify(client.metadata));
+
+// Resume the upload if it was previously started
+var uploadUrl = localStorage.getItem("uploadUrl");
+var uploadMetadata = JSON.parse(localStorage.getItem("uploadMetadata"));
+if (uploadUrl && uploadMetadata) {
+  var resumedUpload = new tus.Upload(file, {
+    endpoint: uploadUrl,
+    metadata: uploadMetadata,
+    resume: true,
+    storeFingerprintForResuming: true,
+    onError: function(error) {
+      console.log("Failed because: " + error);
+    },
+    onProgress: function(bytesUploaded, bytesTotal) {
+      var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2);
+      console.log(bytesUploaded, bytesTotal, percentage + "%");
+    },
+    onSuccess: function() {
+      console.log("Upload finished:", upload.url);
+    }
+  });
+  resumedUpload.start();
+} else {
+  client.start();
+}
