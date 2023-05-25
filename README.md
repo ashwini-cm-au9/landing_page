@@ -318,3 +318,70 @@ Send a message.
 ···
 
 Free Research Preview. ChatGPT may produce inaccurate information about people, places, or facts. ChatGPT Mar 23 Version
+
+
+import React, { useState } from 'react';
+import Uppy from '@uppy/core';
+import Tus from '@uppy/tus';
+import { DragDrop } from '@uppy/react';
+
+const FileUploader = () => {
+  const [progress, setProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+
+  const uppy = Uppy({
+    debug: true,
+    autoProceed: false,
+    restrictions: {
+      maxFileSize: 10000000, // 10MB
+    },
+  }).use(Tus, { endpoint: 'https://your-tus-server.com/files' });
+
+  uppy.on('upload-progress', (file, progress) => {
+    setProgress(progress);
+  });
+
+  uppy.on('upload-success', (file) => {
+    setIsUploading(false);
+    console.log('Upload complete:', file);
+  });
+
+  uppy.on('upload-error', (file, error) => {
+    setIsUploading(false);
+    setUploadError(error);
+  });
+
+  const startUpload = () => {
+    setIsUploading(true);
+    uppy.upload();
+  };
+
+  const cancelUpload = () => {
+    uppy.cancelAll();
+    setIsUploading(false);
+  };
+
+  return (
+    <div>
+      <DragDrop uppy={uppy} />
+
+      {isUploading && (
+        <div>
+          <progress value={progress} max="100"></progress>
+          <button onClick={cancelUpload}>Cancel</button>
+        </div>
+      )}
+
+      {uploadError && <p>Error: {uploadError}</p>}
+
+      <button onClick={startUpload} disabled={isUploading}>
+        Start Upload
+      </button>
+    </div>
+  );
+};
+
+export default FileUploader;
+
+
