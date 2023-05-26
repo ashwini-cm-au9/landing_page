@@ -382,6 +382,139 @@ const FileUploader = () => {
   );
 };
 
+export default ;
+
+
+import React, { useState } from 'react';
+import Uppy from '@uppy/core';
+import UppyDashboard from '@uppy/dashboard';
+import UppyProgressBar from '@uppy/progressbar';
+import '@uppy/core/dist/style.css';
+import '@uppy/dashboard/dist/style.css';
+import '@uppy/progressbar/dist/style.css';
+
+const FileUploader = () => {
+  const [progress, setProgress] = useState(0);
+
+  const uppy = Uppy({
+    debug: true,
+    autoProceed: false,
+    restrictions: {
+      maxFileSize: 1000000, // 1MB in bytes
+    },
+  })
+    .use(UppyDashboard, {
+      target: '#uppy-dashboard',
+      inline: true,
+    })
+    .use(UppyProgressBar, {
+      target: '#uppy-progress-bar',
+      hideAfterFinish: false,
+    });
+
+  uppy.on('upload-progress', (file, progress) => {
+    setProgress(progress.percent);
+  });
+
+  const handleUpload = async () => {
+    const result = await uppy.upload();
+    console.log('Upload complete!', result.successful);
+  };
+
+  return (
+    <div>
+      <div id="uppy-dashboard"></div>
+      <div id="uppy-progress-bar"></div>
+      <progress value={progress} max="100"></progress>
+      <button onClick={handleUpload}>Upload</button>
+    </div>
+  );
+};
+
 export default FileUploader;
 
+Use
+@uppy/react exposes c
+
+import React, { useEffect } from 'react';
+import Uppy from '@uppy/core';
+import Webcam from '@uppy/webcam';
+import { Dashboard } from '@uppy/react';
+
+// Don't forget the CSS: core and the UI components + plugins you are using.
+import '@uppy/core/dist/style.min.css';
+import '@uppy/dashboard/dist/style.min.css';
+import '@uppy/webcam/dist/style.min.css';
+
+// Don’t forget to keep the Uppy instance outside of your component.
+const uppy = new Uppy().use(Webcam);
+
+function Component() {
+    return <Dashboard uppy={uppy} plugins={['Webcam']} />;
+}
+
+
+const uppy = new Uppy().use(Webcam);
+
+function Component(props) {
+    useEffect(() => {
+        uppy.setOptions({ restrictions: props.restrictions });
+    }, [props.restrictions]);
+
+    useEffect(() => {
+        uppy.getPlugin('Webcam').setOptions({ modes: props.webcamModes });
+    }, [props.webcamModes]);
+
+    return <Dashboard uppy={uppy} plugins={['Webcam']} />;
+
+NOTE
+This is the only exception for having Uppy inside the component.
+
+import { useState, useEffect } from 'react';
+import { Uppy } from '@uppy/core';
+import { DragDrop, StatusBar } from '@uppy/react';
+import Transloadit from '@uppy/transloadit';
+
+import '@uppy/core/dist/style.min.css';
+import '@uppy/drag-drop/dist/style.min.css';
+import '@uppy/status-bar/dist/style.min.css';
+
+function createUppy(houseId, roomId) {
+    // Adding to global `meta` will add it to every file.
+    // Every Uppy instance needs a unique ID.
+    return new Uppy({ id: roomId, meta: { houseId, roomId } }).use(Transloadit, {
+        assemblyOptions(file) {
+            return {
+                params: {
+                    auth: { key: 'TRANSLOADIT_AUTH_KEY_HERE' },
+                    template_id: 'xyz',
+                    // Send the results of the assembly to your backend.
+                    notify_url: 'https://your-domain.com/assembly-status',
+                },
+                // You can use these inside your template
+                // https://transloadit.com/docs/topics/assembly-instructions/#form-fields-in-instructions
+                fields: { roomId: file.meta.roomId, houseId: file.meta.houseId },
+            };
+        },
+    });
+}
+
+export default function Room(props) {
+    const { houseId, roomId } = props;
+    // important: passing a initializer function to prevent the state from recreating.
+    const [uppy] = useState(() => createUppy(houseId, roomId));
+
+    useEffect(() => {
+        if (houseId && roomId) {
+            uppy.setOptions({ meta: { houseId, roomId } });
+        }
+    }, [uppy, houseId, roomId]);
+
+    return (
+        <>
+            <DragDrop uppy={uppy} />
+            <StatusBar uppy={uppy} />
+        </>
+    );
+}
 
