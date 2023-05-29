@@ -1,4 +1,41 @@
 
+import React from 'react';
+import Uppy from '@uppy/core';
+import Tus from '@uppy/tus';
+import { Dashboard } from '@uppy/react';
+
+const FileUploader = () => {
+  const uppy = new Uppy({
+    restrictions: {
+      allowedFileTypes: ['.jpg', '.jpeg', '.png'],
+      maxFileSize: 5242880, // 5MB
+      maxNumberOfFiles: 5
+    },
+    autoProceed: false
+  });
+
+  uppy.use(Tus, { endpoint: 'https://your-tus-server.com/files/' });
+
+  uppy.on('complete', (result) => {
+    console.log('Upload complete:', result.successful);
+  });
+
+  return (
+    <div>
+      <Dashboard
+        uppy={uppy}
+        plugins={['DragDrop']}
+        proudlyDisplayPoweredByUppy={false}
+      />
+    </div>
+  );
+};
+
+export default FileUploader;
+
+
+
+
 e upload using ContextAPI and tus-js.
 
 import Uppy from '@uppy/core'
