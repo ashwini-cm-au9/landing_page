@@ -1,6 +1,19 @@
 
 e upload using ContextAPI and tus-js.
 
+import Uppy from '@uppy/core'
+import Tus from '@uppy/tus'
+
+const uppy = new Uppy()
+uppy.use(Tus, {
+  endpoint: '=', // use your tus endpoint here
+  resume: true,
+  retryDelays: [0, 1000, 3000, 5000],
+}
+
+
+
+
 
 Ashwini CM
 How to send file using contextapi and reducer using tus-js-client
