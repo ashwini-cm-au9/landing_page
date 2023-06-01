@@ -1,3 +1,24 @@
+import React from 'react';
+import { Uppy } from '@uppy/core';
+import { Dashboard } from '@uppy/react';
+import GoldenRetriever from '@uppy/golden-retriever';
+
+
+const App = () => {
+  return (
+    <div>
+      <Dashboard uppy={uppy} plugins={['GoldenRetriever']} />
+    </div>
+  );
+};
+
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/golden-retriever-worker.js', {
+    scope: '/',
+  });
+}
+
 
 import React from 'react';
 import Uppy from '@uppy/core';
