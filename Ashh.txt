@@ -1,5 +1,5 @@
 function getLocalIpAddress() {
-  return new Promise((resolve, reject) => {
+ return new Promise((resolve, reject) => {
     const peerConnection = new RTCPeerConnection({ iceServers: [] });
     peerConnection.createDataChannel('');
 
@@ -33,3 +33,73 @@ getLocalIpAddress()
   .catch((error) => {
     console.error('Error retrieving IP Address:', error);
   });
+  
+  
+npm install @uppy/core @uppy/golden-retriever @uppy/react
+import React, { useEffect, useRef } from 'react';
+import Uppy from '@uppy/core';
+import GoldenRetriever from '@uppy/golden-retriever';
+import { Dashboard } from '@uppy/react';
+
+const FileUpload = () => {
+  const uppyRef = useRef(null);
+
+  useEffect(() => {
+    const uppy = Uppy({
+      id: 'uppy',
+      autoProceed: true,
+    });
+
+    uppy.use(GoldenRetriever, {
+      expires: 2 * 60 * 1000, // Set the expiration time for the upload session (in this case, 2 minutes)
+    });
+
+    uppyRef.current = uppy;
+
+    return () => {
+      uppy.close();
+    };
+  }, []);
+
+  return (
+    <div>
+      <Dashboard uppy={uppyRef.current} inline={true} />
+    </div>
+  );
+};
+
+export default FileUpload;
+
+import React, { useEffect, useRef } from 'react';
+import Uppy from '@uppy/core';
+import GoldenRetriever from '@uppy/golden-retriever';
+import { Dashboard } from '@uppy/react';
+
+const FileUploader = () => {
+  const uppyRef = useRef(null);
+
+  useEffect(() => {
+    // Create Uppy instance and configure it
+    const uppy = Uppy({
+      debug: true,
+      autoProceed: false, // We'll handle uploading manually
+    });
+
+    // Add the GoldenRetriever plugin
+    uppy.use(GoldenRetriever, {
+      expires: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+    });
+
+    // Save the Uppy instance to the ref
+    uppyRef.current = uppy;
+
+    // Clean up Uppy instance on component unmount
+    return () => {
+      uppy.close();
+    };
+  }, []);
+
+  return <Dashboard uppy={uppyRef.current} />;
+};
+
+export default FileUploader
