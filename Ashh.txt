@@ -1,3 +1,55 @@
+import React, { useEffect, useRef, useState } from 'react';
+import Uppy from '@uppy/core';
+import GoldenRetriever from '@uppy/golden-retriever';
+import { Dashboard } from '@uppy/react';
+
+const FileUploader = () => {
+  const [uppy, setUppy] = useState(null);
+  const uppyRef = useRef(null);
+
+  useEffect(() => {
+    // Create Uppy instance and configure it
+    const uppyInstance = Uppy({
+      debug: true,
+      autoProceed: false, // We'll handle uploading manually
+    });
+
+    // Add the GoldenRetriever plugin
+    uppyInstance.use(GoldenRetriever, {
+      expires: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+    });
+
+    // Save the Uppy instance to the state and ref
+    setUppy(uppyInstance);
+    uppyRef.current = uppyInstance;
+
+    // Load saved upload state from local storage
+    const savedState = localStorage.getItem('uppyState');
+    if (savedState) {
+      uppyInstance.setState(JSON.parse(savedState));
+    }
+
+    // Event listener to save upload state on page unload
+    const handleUnload = () => {
+      localStorage.setItem('uppyState', JSON.stringify(uppyInstance.getState()));
+    };
+    window.addEventListener('beforeunload', handleUnload);
+
+    // Clean up Uppy instance and event listener on component unmount
+    return () => {
+      uppyInstance.close();
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, []);
+
+  if (!uppy) {
+    return null; // or return a loading indicator if desired
+  }
+
+  return <Dashboard uppy={uppy} />;
+};
+
+export default FileUploader;
 
 import React, { useEffect, useRef, useState } from 'react';
 import Uppy from '@uppy/core';
