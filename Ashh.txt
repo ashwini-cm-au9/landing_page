@@ -1,3 +1,44 @@
+
+import React, { useEffect, useRef, useState } from 'react';
+import Uppy from '@uppy/core';
+import GoldenRetriever from '@uppy/golden-retriever';
+import { Dashboard } from '@uppy/react';
+
+const FileUploader = () => {
+  const [uppy, setUppy] = useState(null);
+
+  useEffect(() => {
+    // Create Uppy instance and configure it
+    const uppyInstance = Uppy({
+      debug: true,
+      autoProceed: false, // We'll handle uploading manually
+    });
+
+    // Add the GoldenRetriever plugin
+    uppyInstance.use(GoldenRetriever, {
+      expires: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+    });
+
+    // Save the Uppy instance to the state
+    setUppy(uppyInstance);
+
+    // Clean up Uppy instance on component unmount
+    return () => {
+      uppyInstance.close();
+    };
+  }, []);
+
+  if (!uppy) {
+    return null; // or return a loading indicator if desired
+  }
+
+  return <Dashboard uppy={uppy} />;
+};
+
+export default FileUploader;
+
+
+
 function getLocalIpAddress() {
  return new Promise((resolve, reject) => {
     const peerConnection = new RTCPeerConnection({ iceServers: [] });
