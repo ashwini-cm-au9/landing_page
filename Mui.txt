@@ -1,0 +1,87 @@
+
+const express = require('express');
+const tus = require('@tus-node/server');
+const { Pool } = require('pg');
+
+const app = express();
+const tusServer = new tus.Server();
+
+// Create a PostgreSQL pool
+const pool = new Pool({
+  user: 'your-username',
+  host: 'your-hostname',
+  database: 'your-database',
+  password: 'your-password',
+  port: 5432, // Replace with your PostgreSQL port
+});
+
+// Configure tus server
+tusServer.datastore = new tus.FileStore({
+  path: '/files',
+});
+
+app.all('/files/*', (req, res) => {
+  tusServer.handle(req, res);
+});
+
+app.get('/files', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM files');
+    const files = result.rows;
+    client.release();
+    res.json(files);
+  } catch (error) {
+    res.status(500).json({ error: 'Error retrieving files' });
+  }
+});
+
+app.get('/files/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM files WHERE id = $1', [id]);
+    const file = result.rows[0];
+    client.release();
+    if (!file) {
+      res.status(404).json({ error: 'File not found' });
+    } else {
+      res.json(file);
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Error retrieving file' });
+  }
+});
+
+app.post('/files', async (req, res) => {
+  const { filename, filesize } = req.body;
+  try {
+    const client = await pool.connect();
+    const result = await client.query(
+      'INSERT INTO files (filename, filesize) VALUES ($1, $2) RETURNING id',
+      [filename, filesize]
+    );
+    const fileId = result.rows[0].id;
+    client.release();
+    res.json({ id: fileId, filename, filesize });
+  } catch (error) {
+    res.status(500).json({ error: 'Error creating file' });
+  }
+});
+
+app.delete('/files/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const client = await pool.connect();
+    await client.query('DELETE FROM files WHERE id = $1', [id]);
+    client.release();
+    res.json({ message: 'File deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error deleting file' });
+  }
+});
+
+const port = 3000; // Replace with your desired port number
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
