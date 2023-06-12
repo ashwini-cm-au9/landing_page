@@ -1,4 +1,163 @@
 import React, { useEffect, useRef, useState } from 'react';
+import tus from 'tus-js-client';
+
+const FileUploader = () => {
+  const [files, setFiles] = useState([]);
+  const tusClientRef = useRef(null);
+
+  useEffect(() => {
+    const createTusClient = (file) => {
+      const upload = new tus.Upload(file, {
+        endpoint: 'http://your-upload-endpoint', // Replace with your upload endpoint URL
+        retryDelays: [0, 1000, 3000, 5000], // Retry delays in milliseconds
+        chunkSize: 5 * 1024 * 1024, // 5MB chunk size
+        metadata: {
+          filename: file.name,
+          filetype: file.type,
+        },
+        onError: (error) => {
+          console.error('Tus upload error', error);
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          const progress = (bytesUploaded / bytesTotal) * 100;
+          const updatedFiles = files.map((f) => {
+            if (f.id === file.id) {
+              return { ...f, progress };
+            }
+            return f;
+          });
+          setFiles(updatedFiles);
+        },
+        onSuccess: () => {
+          console.log('Tus upload success');
+        },
+      });
+
+      return upload;
+    };
+
+    const handleFileChange = (event) => {
+      const selectedFiles = Array.from(event.target.files);
+      const newFiles = selectedFiles.map((file) => ({
+        id: file.name,
+        name: file.name,
+        size: file.size,
+        progress: 0,
+      }));
+
+      setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+
+      selectedFiles.forEach((file) => {
+        const tusUpload = createTusClient(file);
+        tusUpload.start();
+      });
+    };
+
+    tusClientRef.current = { createTusClient };
+
+    return () => {
+      // Cancel and clean up tus uploads on component unmount
+      if (tusClientRef.current) {
+        tusClientRef.current.abort();
+      }
+    };
+  }, []);
+
+  return (
+    <div>
+      <input type="file" multiple onChange={handleFileChange} />
+      <ul>
+        {files.map((file) => (
+          <li key={file.id}>
+            {file.name} - {file.size} bytes - {file.progress.toFixed(2)}% uploaded
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default FileUploader;
+
+import React, { createContext, useState } from 'react';
+
+export const UploadContext = createContext();
+
+export const UploadProvider = ({ children }) => {
+  const [uploads, setUploads] = useState([]);
+
+  const addUpload = (file) => {
+    setUploads([...uploads, file]);
+  };
+
+  const removeUpload = (file) => {
+    setUploads(uploads.filter((upload) => upload !== file));
+  };
+
+  return (
+    <UploadContext.Provider value={{ uploads, addUpload, removeUpload }}>
+      {children}
+    </UploadContext.Provider>
+  );
+};
+
+
+import React from 'react';
+import { UploadProvider } from './UploadContext';
+import YourComponent from './YourComponent';
+
+const App = () => {
+  return (
+    <UploadProvider>
+      <YourComponent />
+    </UploadProvider>
+  );
+};
+
+export default App;
+
+
+import React, { useContext } from 'react';
+import { UploadContext } from './UploadContext';
+import tus from 'tus-js-client';
+
+const YourComponent = () => {
+  const { uploads, addUpload } = useContext(UploadContext);
+
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      addUpload(file);
+      uploadFile(file);
+    }
+  };
+
+  const uploadFile = (file) => {
+    const upload = new tus.Upload(file, {
+      endpoint: 'https://your-tus-server.com/files',
+      // Additional Tus.js options as needed
+      // ...
+    });
+
+    upload.start();
+  };
+
+  return (
+    <div>
+      <input type="file" multiple onChange={handleFileChange} />
+      {uploads.map((upload, index) => (
+        <div key={index}>{upload.name}</div>
+      ))}
+    </div>
+  );
+};
+
+export default YourComponent;
+
+
+
+import React, { useEffect, useRef, useState } from 'react';
 import Uppy from '@uppy/core';
 import GoldenRetriever from '@uppy/golden-retriever';
 import { Dashboard } from '@uppy/react';
