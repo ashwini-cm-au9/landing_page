@@ -1,0 +1,179 @@
+:
+
+Create a context using the createContext function from React:
+
+jsx
+
+Copy code
+
+import React, { createContext, useState } from 'react';
+
+const FileUploadContext = createContext();
+
+export default FileUploadContext;
+
+In your component where you want to manage the file uploads, set up the state and dispatch functions using the useReducer hook:
+
+jsx
+
+Copy code
+
+import React, { useReducer } from 'react';
+
+import FileUploadContext from './FileUploadContext';
+
+const initialState = {
+
+  files: [],
+
+};
+
+function reducer(state, action) {
+
+  switch (action.type) {
+
+    case 'ADD_FILE':
+
+      return {
+
+        ...state,
+
+        files: [...state.files, action.payload],
+
+      };
+
+    default:
+
+      return state;
+
+  }
+
+}
+
+function YourComponent() {
+
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  return (
+
+    <FileUploadContext.Provider value={{ state, dispatch }}>
+
+      {/* Your component code */}
+
+    </FileUploadContext.Provider>
+
+  );
+
+}
+
+export default YourComponent;
+
+When you want to add a file upload, you can dispatch an action to add the file to the context state:
+
+import React, { useContext } from 'react';
+
+import FileUploadContext from './FileUploadContext';
+
+function FileUploader() {
+
+  const { dispatch } = useContext(FileUploadContext);
+
+  const handleFileUpload = (file) => {
+
+    dispatch({ type: 'ADD_FILE', payload: file });
+
+    // Additional logic for uploading the file
+
+  };
+
+  return (
+
+    <div>
+
+      <input type="file" onChange={(e) => handleFileUpload(e.target.files[0])} />
+
+    </div>
+
+  );
+
+}
+
+export default FileUploader;
+
+Now, to show the progress of files using tus-js-client and useContext, you can follow these steps:
+
+Install the tus-js-client package:
+
+shell
+
+npm install tus-js-client
+
+In your component, you can use the useEffect hook to set up tus-js-client and track the progress of each file upload:
+
+jsx
+
+import React, { useContext, useEffect } from 'react';
+
+import tus from 'tus-js-client';
+
+import FileUploadContext from './FileUploadContext';
+
+function FileUploader() {
+
+  const { state } = useContext(FileUploadContext);
+
+  useEffect(() => {
+
+    state.files.forEach((file) => {
+
+      const upload = new tus.Upload(file, {
+
+        endpoint: 'http://your-upload-endpoint',
+
+        onError: (error) => {
+
+          console.log('Upload error', error);
+
+        },
+
+        onProgress: (bytesUploaded, bytesTotal) => {
+
+          const progress = Math.round((bytesUploaded / bytesTotal) * 100);
+
+          console.log('Progress', progress);
+
+          // You can update the progress in the context state here
+
+        },
+
+        onSuccess: () => {
+
+          console.log('Upload success');
+
+          // You can update the success state in the context if needed
+
+        },
+
+      });
+
+      upload.start();
+
+    });
+
+  }, [state.files]);
+
+  return (
+
+    <div>
+
+      <input type="file" onChange={(e) => handleFileUpload(e.target.files[0])} />
+
+    </div>
+
+  );
+
+}
+
+export default FileUploader;
+
+In the above example, the onProgress callback logs the progress of each file upload. You can update the progress in the context state or perform any other action as needed. Similarly, the onSuccess callback logs a message when the upload is successful. You can customize these callbacks to suit your requirement
