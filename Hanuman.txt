@@ -1,4 +1,69 @@
 :
+const express = require('express');
+const tus = require('@tus/server');
+const { Pool } = require('pg');
+
+const app = express();
+const pool = new Pool({
+  user: 'your-username',
+  host: 'your-host',
+  database: 'your-database',
+  password: 'your-password',
+  port: 5432, // Replace with your PostgreSQL port if necessary
+});
+
+// Initialize tus server
+const server = new tus.Server();
+server.datastore = new tus.FileStore({
+  path: '/uploads',
+  getFilePath: (req, fileId, callback) => {
+    pool.query('SELECT path FROM files WHERE id = $1', [fileId], (error, result) => {
+      if (error) {
+        return callback(error);
+      }
+      if (result.rows.length === 0) {
+        return callback(new Error('File not found'));
+      }
+      callback(null, result.rows[0].path);
+    });
+  },
+  setFilePath: (req, fileId, filePath, callback) => {
+    pool.query('INSERT INTO files (id, path) VALUES ($1, $2)', [fileId, filePath], (error) => {
+      callback(error);
+    });
+  },
+  removeFilePath: (req, fileId, callback) => {
+    pool.query('DELETE FROM files WHERE id = $1', [fileId], (error) => {
+      callback(error);
+    });
+  },
+});
+
+// Enable CORS if necessary
+// app.use(cors());
+
+// Attach tus middleware
+app.all('/files/*', tus.midware(server));
+
+// Route to handle GET request for file data
+app.get('/files/:fileId', (req, res) => {
+  const fileId = req.params.fileId;
+  pool.query('SELECT * FROM files WHERE id = $1', [fileId], (error, result) => {
+    if (error) {
+      console.error('Error retrieving file data', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    const fileData = result.rows[0];
+    res.json(fileData);
+  });
+});
+
+app.listen(3000, () => {
+  console.log('Server started on port 3000');
+});
 
 Create a context using the createContext function from React:
 
