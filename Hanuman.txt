@@ -1,5 +1,22 @@
 const readFile = async (filePath)
 
+const tus = require('@tus/server');
+const server = new tus.Server();
+
+server.datastore = new tus.FileStore({
+  directory: '/path/to/files'
+});
+
+server.on(tus.EVENTS.EVENT_UPLOAD_COMPLETE, (event) => {
+  const response = event.response;
+  response.writeHead(200, { 'Content-Type': 'text/plain' });
+  response.write('Upload complete!');
+  response.end();
+});
+
+server.listen(8000, () => {
+  console.log('Tus server listening on port 8000');
+});
 
 import tus from 'tus-js-client';
 
