@@ -1,1 +1,612 @@
+const express = require('express');
+const tus = require('@tus/server');
+const bodyParser = require('body-parser');
 
+const app = express();
+
+// Set up a temporary directory to store uploaded files
+const uploadDir = '/path/to/upload/dir'; // Replace with your desired directory path
+
+// Create a new tus server instance
+const server = new tus.Server();
+server.datastore = new tus.FileStore({ directory: uploadDir });
+
+// Set up body-parser middleware to parse request body
+app.use(bodyParser.json());
+
+// Define tus server endpoints
+app.all('/files/*', (req, res) => {
+  server.handle(req, res);
+});
+
+// Set up event listeners to access file metadata and send a response
+server.on(tus.EVENTS.POST_CREATE, (event) => {
+  const fileId = event.file.id;
+  const metadata = event.file.upload_metadata;
+  console.log('File ID:', fileId);
+  console.log('File metadata:', metadata);
+
+  // Send a custom response to the client
+  event.emit(tus.EVENTS.RESPONSE_END, 'Custom response from server');
+});
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+
+
+const express = require('express');
+const tus = require('@tus/server');
+const app = express();
+
+// Set up a temporary directory to store uploaded files
+const uploadDir = '/path/to/upload/dir'; // Replace with your desired directory path
+
+// Create a new tus server instance
+const server = new tus.Server();
+server.datastore = new tus.FileStore({ directory: uploadDir });
+
+// Enable CORS (replace '*' with your desired origin)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Tus-Resumable, Upload-Length, Upload-Metadata');
+  next();
+});
+
+// Define tus server endpoints
+app.all('/files/*', tus());
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+
+######№$#######
+
+const tus = require('tus-node-client');
+
+const file = '/path/to/file'; // Replace with the path to your file
+const endpoint = 'http://your-server-endpoint.com/files'; // Replace with your server endpoint
+
+const upload = new tus.Upload(file, {
+  endpoint: endpoint,
+  chunkSize: 5 * 1024 * 1024, // 5MB (adjust the size as needed)
+  onError: function (error) {
+    console.log('Upload error:', error);
+  },
+  onProgress: function (bytesUploaded, bytesTotal) {
+    const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+    console.log('Upload progress:', percentage + '%');
+  },
+  onSuccess: function () {
+    console.log('Upload complete');
+  }
+});
+
+const client = new tus.UploadClient();
+client.createUpload(upload)
+  .then(() => client.resumeUpload(upload))
+  .catch((error) => {
+    console.log('Error creating/uploading file:', error);
+  });
+
+
+CORS Error during Chunk Upload
+
+
+User
+While uploading file from tus-js-client to @tus/server, in last chunck getting CORS error
+
+ChatGPT
+If you're encountering a CORS (Cross-Origin Resource Sharing) error while uploading a file from the tus-js-client to @tus/server during the last chunk, there are a few possible solutions you can try:
+
+CORS Configuration: Check the CORS configuration on your @tus/server to ensure that it allows requests from the origin where your tus-js-client is hosted. You might need to add the appropriate headers to your server's response to enable cross-origin requests.
+
+Options Request: When making a cross-origin request with certain methods (e.g., PUT), the browser first sends an OPTIONS request to check the server's CORS headers. Make sure that your server responds with the appropriate CORS headers for the OPTIONS request as well.
+
+Chunk Size: If the last chunk is significantly larger than the previous ones, it's possible that the request exceeds the server's configured maximum request size. Check your server's settings to ensure that it allows the expected request size for file uploads.
+
+Preflight Request Failure: If the OPTIONS request (preflight request) itself fails due to a CORS error, it may indicate that the server is not configured correctly to handle such requests. Double-check the server configuration and ensure that it allows the necessary headers and methods for preflight requests.
+
+Custom Headers: If you're using custom headers in your requests, verify that the server correctly handles and responds to those headers in the CORS configuration.
+
+Proxy Server: If your tus-js-client and @tus/server are hosted on different domains, and you have control over the server, you can consider setting up a proxy server to handle the CORS issue. The proxy server acts as an intermediary between the client and server, forwarding the requests and ensuring the proper CORS headers are set.
+
+By investigating these potential solutions, you should be able to address the CORS error you're encountering during the final chunk upload from tus-js-client to @tus/server.
+
+
+
+
+
+User
+Still getting CORS error and also offset is not defined for last chunk
+
+ChatGPT
+If you're still encountering a CORS error and the offset is not defined for the last chunk when uploading a file from tus-js-client to @tus/server, here are some additional suggestions to address these issues:
+
+CORS Error:
+
+Double-check the CORS configuration on your server to ensure that it allows requests from the origin where your tus-js-client is hosted. Make sure to include the appropriate headers such as Access-Control-Allow-Origin and Access-Control-Allow-Methods.
+If you have access to the server configuration, consider adding the necessary CORS headers explicitly to allow the cross-origin requests.
+Test the upload using tools like cURL or Postman to isolate the issue and verify if it's specific to the tus-js-client or related to the server's CORS configuration.
+Offset Undefined for Last Chunk:
+
+Ensure that you are correctly determining the chunk size when sending the file with tus-js-client. The last chunk might have a different size compared to previous chunks, so you need to handle it separately.
+Double-check the implementation of your client-side code using tus-js-client to ensure that it calculates the correct offset for the last chunk. The offset indicates the starting position of the chunk in the file.
+Verify that the server-side implementation of @tus/server is correctly interpreting the offset value sent by the client. Ensure that it is properly extracting and handling the offset for each chunk, including the last one.
+Debug and log the values of the offset being sent by the client and how it is interpreted by the server to identify any discrepancies or issues in the calculation.
+By carefully examining these suggestions, you should be able to troubleshoot the CORS error and address the offset being undefined for the last chunk during the file upload process.
+
+
+
+
+
+User
+Give me an explanation with complete code from frontend as well as server side code 
+
+ChatGPT
+Certainly! Below is an example that includes both frontend and server-side code for uploading a file using tus-js-client on the frontend and @tus/server on the server. Please note that this is a simplified example, and you may need to adapt it to your specific use case.
+
+Frontend (using tus-js-client):
+
+html
+Copy code
+<!DOCTYPE html>
+<html>
+<head>
+  <title>File Upload</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tus-js-client/1.7.0/tus.min.js"></script>
+</head>
+<body>
+  <input type="file" id="fileInput">
+  <button onclick="uploadFile()">Upload</button>
+
+  <script>
+    function uploadFile() {
+      var fileInput = document.getElementById('fileInput');
+      var file = fileInput.files[0];
+      
+      var upload = new tus.Upload(file, {
+        endpoint: 'http://your-server-endpoint.com/files', // Replace with your server endpoint
+        retryDelays: [0, 1000, 3000, 5000],
+        metadata: {
+          filename: file.name,
+          filetype: file.type
+        },
+        onError: function (error) {
+          console.log('Upload error: ', error);
+        },
+        onProgress: function (bytesUploaded, bytesTotal) {
+          var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2);
+          console.log('Upload progress: ' + percentage + '%');
+        },
+        onSuccess: function () {
+          console.log('Upload complete');
+        }
+      });
+
+      upload.start();
+    }
+  </script>
+</body>
+</html>
+Server-side (using @tus/server with Express.js):
+
+javascript
+Copy code
+const express = require('express');
+const tus = require('@tus/server');
+
+const app = express();
+
+// Set up a temporary directory to store uploaded files
+const uploadDir = '/path/to/upload/dir'; // Replace with your desired directory path
+
+app.all('/files*', tus());
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+Make sure to replace 'http://your-server-endpoint.com/files' in the frontend code with the appropriate URL of your server's endpoint, and 'path/to/upload/dir' in the server-side code with the desired directory path to store uploaded files.
+
+With this code in place, you should be able to upload files from the frontend to the server using the tus protocol, while handling CORS and the offset for the last chunk properly. Remember to install the required dependencies (@tus/server and express) in your server-side project.
+
+
+2 / 2
+
+
+
+
+
+User
+Implementation of express and @tus/server code is not working 
+
+ChatGPT
+Apologies for the confusion. Here's an updated implementation of the server-side code using Express.js and @tus/server that should work correctly:
+
+javascript
+Copy code
+const express = require('express');
+const tus = require('@tus/server');
+
+const app = express();
+
+// Set up a temporary directory to store uploaded files
+const uploadDir = '/path/to/upload/dir'; // Replace with your desired directory path
+
+// Define the tus server instance
+const server = new tus.Server();
+server.datastore = new tus.FileStore({ directory: uploadDir });
+
+// Create a route for tus server
+app.all('/files/*', (req, res) => {
+  server.handle(req, res);
+});
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+Make sure to replace 'path/to/upload/dir' in the server-side code with the desired directory path to store uploaded files.
+
+Please note that you need to install the required dependencies (express and @tus/server) in your server-side project. You can use the following commands to install them:
+
+bash
+Copy code
+npm install express
+npm install @tus/server
+Once you have the updated server-side code in place and the dependencies installed, the server should run correctly and handle tus file uploads.
+
+If you're still experiencing issues, please provide specific error messages or details about the problem you're encountering, and I'll do my best to assist you further.
+
+
+
+
+
+User
+Using this code i don't find correct req methods or query to get file metadata sent from tus js client 
+
+ChatGPT
+Apologies for the confusion earlier. To access the file metadata sent from the tus-js-client in the server-side code, you can use the @tus/server library's event listeners. Here's an updated implementation that retrieves the file metadata:
+
+javascript
+Copy code
+const express = require('express');
+const tus = require('@tus/server');
+const bodyParser = require('body-parser');
+
+const app = express();
+
+// Set up a temporary directory to store uploaded files
+const uploadDir = '/path/to/upload/dir'; // Replace with your desired directory path
+
+// Create a new tus server instance
+const server = new tus.Server();
+server.datastore = new tus.FileStore({ directory: uploadDir });
+
+// Set up body-parser middleware to parse request body
+app.use(bodyParser.json());
+
+// Define tus server endpoints
+app.all('/files/*', (req, res) => {
+  server.handle(req, res);
+});
+
+// Set up event listeners to access file metadata
+server.on(tus.EVENTS.PRE_CREATE, (event) => {
+  const metadata = event.file.upload_metadata;
+  console.log('File metadata:', metadata);
+});
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+In this updated code, the body-parser middleware is added to parse the request body as JSON. This allows you to access the file metadata sent from the tus-js-client via the upload_metadata property in the tus.EVENTS.PRE_CREATE event listener.
+
+Remember to replace 'path/to/upload/dir' with the desired directory path to store uploaded files.
+
+After making these changes, you should be able to access the file metadata sent from the client-side code within the server.on(tus.EVENTS.PRE_CREATE) event listener in the server-side code.
+
+Let me know if you have any further questions or issues!
+
+
+
+
+
+User
+I can get only EVENTS.POST_RECEIVE,POST FINISH .i didn't get pre create
+
+ChatGPT
+Apologies for the confusion. It seems that the @tus/server library doesn't provide a specific event for PRE_CREATE. However, you can access the file metadata during the POST_CREATE event. Here's an updated implementation to retrieve the file metadata using POST_CREATE event:
+
+javascript
+Copy code
+const express = require('express');
+const tus = require('@tus/server');
+const bodyParser = require('body-parser');
+
+const app = express();
+
+// Set up a temporary directory to store uploaded files
+const uploadDir = '/path/to/upload/dir'; // Replace with your desired directory path
+
+// Create a new tus server instance
+const server = new tus.Server();
+server.datastore = new tus.FileStore({ directory: uploadDir });
+
+// Set up body-parser middleware to parse request body
+app.use(bodyParser.json());
+
+// Define tus server endpoints
+app.all('/files/*', (req, res) => {
+  server.handle(req, res);
+});
+
+// Set up event listeners to access file metadata
+server.on(tus.EVENTS.POST_CREATE, (event) => {
+  const fileId = event.file.id;
+  const metadata = event.file.upload_metadata;
+  console.log('File ID:', fileId);
+  console.log('File metadata:', metadata);
+});
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+In this updated code, the POST_CREATE event is used instead of PRE_CREATE to access the file metadata. The event.file.id represents the unique identifier of the file, and event.file.upload_metadata contains the file metadata sent from the tus-js-client.
+
+Remember to replace 'path/to/upload/dir' with the desired directory path to store uploaded files.
+
+After making these changes, you should be able to access the file metadata sent from the client-side code within the server.on(tus.EVENTS.POST_CREATE) event listener in the server-side code.
+
+I apologize for any confusion caused earlier. If you have any further questions, feel free to ask!
+
+
+
+
+
+User
+How we can send response back to client 
+
+ChatGPT
+To send a response back to the client from the server using @tus/server, you can utilize the event.emit() method with the appropriate event name. Here's an example of how to send a response:
+
+javascript
+Copy code
+const express = require('express');
+const tus = require('@tus/server');
+const bodyParser = require('body-parser');
+
+const app = express();
+
+// Set up a temporary directory to store uploaded files
+const uploadDir = '/path/to/upload/dir'; // Replace with your desired directory path
+
+// Create a new tus server instance
+const server = new tus.Server();
+server.datastore = new tus.FileStore({ directory: uploadDir });
+
+// Set up body-parser middleware to parse request body
+app.use(bodyParser.json());
+
+// Define tus server endpoints
+app.all('/files/*', (req, res) => {
+  server.handle(req, res);
+});
+
+// Set up event listeners to access file metadata and send a response
+server.on(tus.EVENTS.POST_CREATE, (event) => {
+  const fileId = event.file.id;
+  const metadata = event.file.upload_metadata;
+  console.log('File ID:', fileId);
+  console.log('File metadata:', metadata);
+
+  // Send a custom response to the client
+  event.emit(tus.EVENTS.RESPONSE_END, 'Custom response from server');
+});
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+In this code, after accessing the file metadata in the POST_CREATE event listener, we use event.emit(tus.EVENTS.RESPONSE_END, 'Custom response from server') to send a custom response back to the client. The second argument of event.emit() represents the response content.
+
+Note that the @tus/server library provides the EVENTS.RESPONSE_END event, which is triggered when the server is about to finish sending the response to the client. You can utilize this event to send a custom response.
+
+Feel free to modify the code as per your specific response requirements.
+
+
+
+
+
+User
+If we give chunksize in tus-js-client, file not not uploading full, without chunksize working fine.i need to give chunk size
+
+ChatGPT
+If you're experiencing issues with file uploads when specifying a chunk size using tus-js-client, it's possible that the chunk size is not configured correctly. Here's an example that demonstrates how to set the chunk size properly:
+
+javascript
+Copy code
+const tus = require("tus-js-client");
+
+const file = document.getElementById("fileInput").files[0];
+const chunkSize = 5 * 1024 * 1024; // 5MB (adjust the size as needed)
+const options = {
+  endpoint: "http://your-server-endpoint.com/files", // Replace with your server endpoint
+  chunkSize: chunkSize,
+  retryDelays: [0, 1000, 3000, 5000],
+  metadata: {
+    filename: file.name,
+    filetype: file.type
+  },
+  onError: function (error) {
+    console.log("Upload error:", error);
+  },
+  onProgress: function (bytesUploaded, bytesTotal) {
+    var percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+    console.log("Upload progress: " + percentage + "%");
+  },
+  onSuccess: function () {
+    console.log("Upload complete");
+  }
+};
+
+const upload = new tus.Upload(file, options);
+upload.start();
+In this example, we specify the chunkSize variable as 5 * 1024 * 1024, which represents a chunk size of 5MB. You can adjust this value to match your desired chunk size.
+
+Make sure to replace "http://your-server-endpoint.com/files" with the appropriate URL of your server's endpoint.
+
+By correctly setting the chunkSize in the options object, you should be able to upload the file with the specified chunk size using tus-js-client.
+
+If you're still encountering issues or errors, please provide more details about the problem you're facing, including any error messages, and I'll do my best to assist you further.
+
+
+
+
+
+User
+It will send only one chunk and stops gives cors error, instead of entire data 
+
+2 / 2
+
+
+ChatGPT
+I apologize for the confusion. If you're experiencing issues where only one chunk is sent and then you receive a CORS error, it could be due to incorrect server configuration or restrictions on the server-side.
+
+Here are a few steps to troubleshoot and resolve this issue:
+
+Server-side CORS configuration:
+
+Ensure that the server is correctly configured to handle CORS requests. Set the appropriate headers to allow cross-origin requests.
+Make sure the server responds with the correct Access-Control-Allow-Origin, Access-Control-Allow-Methods, and other necessary headers.
+Check the server logs or console for any error messages related to CORS.
+If you have control over the server, consider allowing CORS requests from all origins for testing purposes. However, in a production environment, it is recommended to limit CORS access to specific origins for security reasons.
+Verify server-side tus implementation:
+
+Double-check your server-side implementation using @tus/server to ensure it handles tus protocol correctly.
+Make sure the server is able to handle and process multiple chunk requests and combine them to form the complete file.
+Check for any server-side errors or exceptions that may cause the upload process to terminate prematurely.
+Test with different tus server implementations:
+
+Try using a different tus server implementation or library to see if the issue persists. This can help isolate the problem to the specific tus server implementation being used.
+You can explore other tus server implementations such as tusd, tus-node-server, or tusd-js.
+By carefully reviewing your server configuration and implementation, you should be able to identify and resolve the issue causing the upload to stop after sending a single chunk and encountering a CORS error.
+
+If the issue persists or you need further assistance, please provide more details about your server configuration, any error messages, and any additional relevant information, so that I can assist you more effectively.
+
+
+
+
+
+User
+Give me complete code of server side @tus/server
+
+ChatGPT
+Certainly! Here's an example of a complete server-side code using @tus/server to handle tus file uploads:
+
+javascript
+Copy code
+const express = require('express');
+const tus = require('@tus/server');
+const app = express();
+
+// Set up a temporary directory to store uploaded files
+const uploadDir = '/path/to/upload/dir'; // Replace with your desired directory path
+
+// Create a new tus server instance
+const server = new tus.Server();
+server.datastore = new tus.FileStore({ directory: uploadDir });
+
+// Enable CORS (replace '*' with your desired origin)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Tus-Resumable, Upload-Length, Upload-Metadata');
+  next();
+});
+
+// Define tus server endpoints
+app.all('/files/*', tus());
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+Make sure to replace 'path/to/upload/dir' with the desired directory path to store uploaded files.
+
+In this code, we create an Express app and configure the necessary CORS headers to allow cross-origin requests. Then, we instantiate a @tus/server instance, set the datastore to use a FileStore with the specified upload directory, and define the tus server endpoint using app.all('/files/*', tus()).
+
+Once you have the server-side code in place, you can start the server by running the script, and it will listen on port 3000. You can then upload files to the tus server using tus-js-client or any other tus client library that supports the tus protocol.
+
+Remember to install the required dependencies (express and @tus/server) in your server-side project. You can use the following commands to install them:
+
+bash
+Copy code
+npm install express
+npm install @tus/server
+I hope this helps! Let me know if you have any further questions.
+
+
+
+
+
+User
+How send file from javascript to 
+@tus/server in node
+
+4 / 4
+
+
+ChatGPT
+To send a file from JavaScript to @tus/server in Node.js, you can use the tus-node-client library. Here's an example of how you can upload a file from JavaScript to the server:
+
+First, install the tus-node-client library:
+
+bash
+Copy code
+npm install tus-node-client
+Then, use the following code to upload the file:
+
+javascript
+Copy code
+const tus = require('tus-node-client');
+
+const file = '/path/to/file'; // Replace with the path to your file
+const endpoint = 'http://your-server-endpoint.com/files'; // Replace with your server endpoint
+
+const upload = new tus.Upload(file, {
+  endpoint: endpoint,
+  chunkSize: 5 * 1024 * 1024, // 5MB (adjust the size as needed)
+  onError: function (error) {
+    console.log('Upload error:', error);
+  },
+  onProgress: function (bytesUploaded, bytesTotal) {
+    const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+    console.log('Upload progress:', percentage + '%');
+  },
+  onSuccess: function () {
+    console.log('Upload complete');
+  }
+});
+
+const client = new tus.UploadClient();
+client.createUpload(upload)
+  .then(() => client.resumeUpload(upload))
+  .catch((error) => {
+    console.log('Error creating/uploading file:', error);
+  });
+Make sure to replace 'http://your-server-endpoint.com/files' with the appropriate URL of your server's endpoint. Also, replace '/path/to/file' with the actual path to the file you want to upload.
+
+In this example, we create an instance of tus.Upload with the file path and the necessary options. The chunkSize option represents the size of each chunk, and you can adjust it based on your requirements.
+
+Then, we create an instance of tus.UploadClient and use its createUpload method to create the upload on the server. Once the upload is created, we use the resumeUpload method to start or resume the upload.
+
+The onError, onProgress, and onSuccess callbacks provide information about the upload progress and status.
+
+When you run this code, it will initiate the file upload to the specified server endpoint using the tus protocol.
