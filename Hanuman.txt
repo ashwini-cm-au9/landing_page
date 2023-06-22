@@ -1,4 +1,39 @@
-const readFile = async (filePath) => {
+const readFile = async (filePath)
+
+
+import tus from 'tus-js-client';
+
+function sendUploadOffset(offsetValue, uploadUrl) {
+  const options = {
+    headers: {
+      'Upload-Offset': offsetValue,
+      'Tus-Resumable': '1.0.0',
+      'Content-Type': 'application/offset+octet-stream'
+    },
+    method: 'PATCH'
+  };
+
+  const upload = new tus.Upload(null, {
+    endpoint: uploadUrl,
+    chunkSize: 1024 * 1024, // Set your desired chunk size
+    onError: (error) => {
+      console.error('Error sending upload offset:', error);
+    },
+    onSuccess: () => {
+      console.log('Upload offset sent successfully');
+    }
+  });
+
+  upload.options = options;
+  upload.start();
+}
+
+// Usage example
+const offsetValue = 1024; // Replace with your desired offset value
+const uploadUrl = 'https://example.com/upload'; // Replace with your upload URL
+sendUploadOffset(offsetValue, uploadUrl);
+
+> {
   try {
     const response = await axios.get(filePath);
     const fileContent = response.data;
