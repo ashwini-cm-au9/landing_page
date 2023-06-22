@@ -1,3 +1,66 @@
+
+const fileInput = document.getElementById('fileInput'); // Assuming you have an input element with the id "fileInput"
+const file = fileInput.files[0];
+
+const reader = new FileReader();
+
+reader.onload = function(event) {
+  const fileData = event.target.result;
+
+  // Use the tus-js-client to send the file data to the Node.js server
+  sendFileDataToServer(fileData);
+};
+
+reader.readAsArrayBuffer(file);
+
+
+function sendFileDataToServer(fileData) {
+  const upload = new tus.Upload(fileData, {
+    endpoint: 'http://your-node-server.com/upload', // Replace with your Node.js server's upload endpoint
+    chunkSize: 5242880, // Adjust the chunk size as per your requirements
+    onError: function (error) {
+      console.log('Error during upload:', error);
+    },
+    onSuccess: function () {
+      console.log('Upload complete');
+    },
+  });
+
+  upload.start();
+}
+
+
+const express = require('express');
+const multer = require('multer');
+
+const app = express();
+
+// Set up Multer middleware
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Adjust the destination folder as per your requirements
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({ storage });
+
+// Handle the file upload endpoint
+app.post('/upload', upload.single('file'), function (req, res) {
+  console.log('File received:', req.file);
+  res.send('File uploaded successfully');
+});
+
+// Start the server
+app.listen(3000, function () {
+  console.log('Server is listening on port 3000');
+});
+
+
+
+
 const readFile = async (filePath)
 
 const tus = require('@tus/server');
