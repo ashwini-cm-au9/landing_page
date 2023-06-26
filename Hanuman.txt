@@ -1,3 +1,57 @@
+
+const tus = require('@tus/server');
+const express = require('express');
+
+const app = express();
+
+const server = new tus.Server();
+
+// Register the tus server as middleware
+app.all('/files', server.handle.bind(server));
+
+// Manually trigger an error
+app.get('/trigger-error', (req, res) => {
+  const fileId = 'your-file-id';
+  const error = new Error('Custom error message');
+  server.emit('error', error, fileId);
+  res.send('Error triggered');
+});
+
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+
+
+
+const fs = require('fs');
+const tus = require('tus-js-client');
+
+const filePath = 'path/to/file.txt';
+const uploadUrl = 'http://your-upload-url.com/upload';
+
+// Read the file and create a Readable stream
+const fileStream = fs.createReadStream(filePath);
+
+// Create a new tus upload
+const upload = new tus.Upload(fileStream, {
+  endpoint: uploadUrl,
+  onError: (error) => {
+    console.error('Upload error:', error);
+  },
+  onProgress: (bytesUploaded, bytesTotal) => {
+    const progress = (bytesUploaded / bytesTotal * 100).toFixed(2);
+    console.log(`Upload progress: ${progress}%`);
+  },
+  onSuccess: () => {
+    console.log('Upload complete');
+  }
+});
+
+// Start the upload
+upload.start();
+
+
+
 const express = require('express');
 const tus = require('@tus/server');
 const bodyParser = require('body-parser');
