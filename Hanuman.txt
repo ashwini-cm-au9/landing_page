@@ -1,3 +1,91 @@
+import sqlite3
+
+# Establish a database connection
+conn = sqlite3.connect('your_database.db')
+cursor = conn.cursor()
+
+# Step 1: Get the total count of records
+cursor.execute('SELECT COUNT(*) FROM your_table')
+total_count = cursor.fetchone()[0]
+
+# Step 2: Set the batch size
+batch_size = 100
+
+# Step 3: Calculate the number of iterations
+num_iterations = total_count // batch_size
+if total_count % batch_size != 0:
+    num_iterations += 1
+
+# Step 4: Loop over the iterations
+for iteration in range(1, num_iterations + 1):
+
+    # Step 5: Construct the SELECT query with offset and limit
+    offset = (iteration - 1) * batch_size
+    query = f'SELECT * FROM your_table LIMIT {batch_size} OFFSET {offset}'
+
+    # Step 6: Execute the SELECT query and fetch the data
+    cursor.execute(query)
+    fetched_records = cursor.fetchall()
+
+    # Step 7: Process the fetched records
+    for record in fetched_records:
+        # Process each record as needed
+        print(record)
+
+# Step 8: Close the database connection
+cursor.close()
+conn.close()
+
+
+
+import sqlite3
+import time
+
+# Establish a database connection
+conn = sqlite3.connect('your_database.db')
+cursor = conn.cursor()
+
+# Step 1: Get the total count of records
+cursor.execute('SELECT COUNT(*) FROM your_table')
+total_count = cursor.fetchone()[0]
+
+# Step 2: Set the batch size
+batch_size = 100
+
+# Step 3: Calculate the number of iterations
+num_iterations = total_count // batch_size
+if total_count % batch_size != 0:
+    num_iterations += 1
+
+# Variable to store the latest timestamp
+latest_timestamp = 0
+
+# Step 4: Loop over the iterations
+for iteration in range(1, num_iterations + 1):
+
+    # Step 5: Construct the SELECT query with offset, limit, and timestamp condition
+    offset = (iteration - 1) * batch_size
+    query = f"SELECT * FROM your_table WHERE timestamp > {latest_timestamp} LIMIT {batch_size} OFFSET {offset}"
+
+    # Step 6: Execute the SELECT query and fetch the data
+    cursor.execute(query)
+    fetched_records = cursor.fetchall()
+
+    # Step 7: Process the fetched records
+    for record in fetched_records:
+        # Process each record as needed
+        print(record)
+
+        # Step 7a: Update the latest timestamp if necessary
+        if record['timestamp'] > latest_timestamp:
+            latest_timestamp = record['timestamp']
+
+    # Add a delay before the next iteration (optional)
+    time.sleep(1)
+
+# Step 8: Close the database connection
+cursor.close()
+conn.close()
 
 const tus = require('@tus/server');
 const express = require('express');
