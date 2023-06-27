@@ -1,3 +1,64 @@
+
+const mysql = require('mysql');
+
+// Create a MySQL connection
+const connection = mysql.createConnection({
+  host: 'your_host',
+  user: 'your_user',
+  password: 'your_password',
+  database: 'your_database'
+});
+
+// Define the offset and limit for each batch
+const offset = 0;
+const limit = 100; // Number of records to fetch per batch
+
+// Function to fetch data records
+function fetchData(offset, limit) {
+  return new Promise((resolve, reject) => {
+    // Execute the select query with offset and limit
+    const query = `SELECT * FROM your_table LIMIT ${limit} OFFSET ${offset}`;
+    connection.query(query, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+// Function to process each batch of data
+async function processBatches() {
+  let allData = [];
+  let batchData;
+
+  try {
+    do {
+      // Fetch a batch of data
+      batchData = await fetchData(offset, limit);
+      
+      // Add the current batch of data to the final result
+      allData = allData.concat(batchData);
+
+      // Increment the offset for the next batch
+      offset += limit;
+    } while (batchData.length === limit);
+
+    // Process allData here
+    console.log(allData);
+  } catch (error) {
+    console.error('Error occurred:', error);
+  } finally {
+    // Close the MySQL connection
+    connection.end();
+  }
+}
+
+// Call the function to start processing batches
+processBatches();
+
+
 import sqlite3
 
 # Establish a database connection
