@@ -59,3 +59,68 @@ function FlightRouteMap() {
 }
 
 export default FlightRouteMap;
+
+
+
+import React, { useEffect } from 'react';
+import * as am4core from '@amcharts/amcharts4/core';
+import * as am4maps from '@amcharts/amcharts4/maps';
+import am4themes_animated from '@amcharts/amcharts4/themes/animated';
+
+// Import your location icon image
+import LocationIcon from './location-icon.png'; // Replace with the actual image path
+
+function FlightRouteMap() {
+  useEffect(() => {
+    // Initialize map
+    am4core.useTheme(am4themes_animated);
+    const chart = am4core.create('map-container', am4maps.MapChart);
+    chart.geodata = am4geodata_worldLow;
+
+    // Create map series for destination icons
+    const series = chart.series.push(new am4maps.MapImageSeries());
+
+    // Define location data (you can replace this with your own data)
+    const locations = [
+      { latitude: 40, longitude: -100, color: '#FF5733', number: '1' },
+      { latitude: 30, longitude: 20, color: '#33FF57', number: '2' },
+      // Add more locations as needed
+    ];
+
+    // Create location icons with colors and random numbers
+    locations.forEach(location => {
+      const icon = series.mapImages.create();
+      icon.latitude = location.latitude;
+      icon.longitude = location.longitude;
+      icon.nonScaling = true;
+
+      // Create the location icon using your image
+      const image = icon.createChild(am4core.Image);
+      image.href = LocationIcon; // Use the imported location icon image
+      image.width = 20;
+      image.height = 20;
+      image.fill = am4core.color(location.color); // Set icon color based on input data
+
+      const label = icon.createChild(am4core.Label);
+      label.text = location.number;
+      label.fontSize = 12;
+      label.align = 'center';
+      label.valign = 'middle';
+    });
+
+    // Set map projection and other properties as needed
+    chart.projection = new am4maps.projections.Miller();
+    chart.zoomControl = new am4maps.ZoomControl();
+
+    // Clean up on unmount
+    return () => {
+      chart.dispose();
+    };
+  }, []);
+
+  return (
+    <div id="map-container" style={{ width: '100%', height: '500px' }}></div>
+  );
+}
+
+export default FlightRouteMap;
