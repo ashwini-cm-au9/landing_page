@@ -1,3 +1,87 @@
+// Inside your FlightRouteMap component
+
+// ...
+
+// Define the location icon as a custom SVG path
+let locationIcon = imageTemplate.createChild(am4core.Image);
+locationIcon.href = 'URL_TO_YOUR_SVG_IMAGE';
+locationIcon.width = 20; // Adjust the width of the SVG image
+locationIcon.height = 20; // Adjust the height of the SVG image
+
+// Provide dynamic data for the map
+imageSeries.data = [
+  { cityName: 'City1', value: 100, latitude: 40, longitude: -74 },
+  { cityName: 'City2', value: 200, latitude: 35, longitude: 139 },
+  // Add more cities with dynamic values and coordinates
+];
+
+// ...
+
+import React, { useEffect } from 'react';
+import * as am4core from '@amcharts/amcharts4/core';
+import * as am4maps from '@amcharts/amcharts4/maps';
+import * as am4geodata_worldLow from '@amcharts/amcharts4-geodata/worldLow';
+import am4themes_animated from '@amcharts/amcharts4/themes/animated';
+
+function FlightRouteMap() {
+  useEffect(() => {
+    // Initialize amCharts
+    am4core.useTheme(am4themes_animated);
+    let chart = am4core.create('chartdiv', am4maps.MapChart);
+
+    // Set map data
+    chart.geodata = am4geodata_worldLow;
+
+    // Create a map polygon series for your destination cities
+    let series = chart.series.push(new am4maps.MapPolygonSeries());
+    series.useGeodata = true;
+
+    // Configure your location icons with dynamic values
+    let city = series.mapPolygons.template;
+    city.tooltipText = '{name}';
+    city.fill = am4core.color('#277A60');
+    city.fillOpacity = 0.8;
+    city.nonScalingStroke = true;
+    city.strokeWidth = 0.5;
+
+    // Add location icons
+    let imageSeries = chart.series.push(new am4maps.MapImageSeries());
+    let imageTemplate = imageSeries.mapImages.template;
+    imageTemplate.propertyFields.longitude = 'longitude';
+    imageTemplate.propertyFields.latitude = 'latitude';
+    imageTemplate.nonScaling = true;
+    imageTemplate.tooltipText = '{cityName}: {value}';
+    
+    // Define the location icon as an SVG path (you can customize this)
+    let circle = imageTemplate.createChild(am4core.Circle);
+    circle.radius = 8;
+    circle.fill = am4core.color('#FF5733');
+    circle.stroke = am4core.color('#FFFFFF');
+    circle.strokeWidth = 2;
+
+    // Provide dynamic data for the map
+    imageSeries.data = [
+      { cityName: 'City1', value: 100, latitude: 40, longitude: -74 },
+      { cityName: 'City2', value: 200, latitude: 35, longitude: 139 },
+      // Add more cities with dynamic values and coordinates
+    ];
+
+    // Finally, add any routes or connections between the cities if needed
+
+    return () => {
+      // Clean up when the component unmounts
+      chart.dispose();
+    };
+  }, []);
+
+  return (
+    <div id="chartdiv" style={{ width: '100%', height: '500px' }}></div>
+  );
+}
+
+export default FlightRouteMap;
+
+
 import React, { useEffect } from 'react';
 import * as am4core from '@amcharts/amcharts4/core';
 import * as am4maps from '@amcharts/amcharts4/maps';
