@@ -1,3 +1,115 @@
+// Create a chart instance
+var chart = am4core.create("chartdiv", am4maps.MapChart);
+
+// Set the map definition (e.g., "worldLow" for a world map)
+chart.geodata = am4geodata_worldLow;
+
+// Set the projection
+chart.projection = new am4maps.projections.Miller();
+
+// Create map polygon series for the flight route
+var series = chart.series.push(new am4maps.MapPolygonSeries());
+series.useGeodata = true;
+
+// Add flight route data (you should replace this with your own data)
+series.data = [
+  {
+    "id": "line1",
+    "multiGeoLine": [
+      [
+        {"latitude": startLatitude, "longitude": startLongitude},
+        {"latitude": endLatitude, "longitude": endLongitude}
+      ]
+    ]
+  }
+];
+
+// Create a map image series for the pin/bullet
+var imageSeries = chart.series.push(new am4maps.MapImageSeries());
+
+// Create a map image
+var image = imageSeries.mapImages.template.createChild(am4core.Image);
+image.propertyFields.href = "image"; // Set the URL of your pin/bullet image
+image.propertyFields.latitude = "latitude"; // Set the latitude of the location
+image.propertyFields.longitude = "longitude"; // Set the longitude of the location
+imageSeries.data = [
+  {
+    "image": "path/to/your/image.png",
+    "latitude": locationLatitude,
+    "longitude": locationLongitude
+  }
+];
+
+// Customize the pin/bullet appearance if needed
+image.width = 30;
+image.height = 30;
+image.tooltipText = "Your Tooltip Text"; // Optional tooltip
+
+// Add zoom control
+chart.zoomControl = new am4maps.ZoomControl();
+
+// Enable pan and zoom
+chart.seriesContainer.draggable = true;
+chart.seriesContainer.resizable = true;
+
+// Finally, make the chart responsive
+chart.responsive.enabled = true;
+
+var customMarker = chart.series.push(new am4maps.MapImageSeries());
+var marker = customMarker.mapImages.template.createChild(am4core.Image);
+marker.width = 30; // Set the width of your image
+marker.height = 30; // Set the height of your image
+marker.href = "path/to/your/image.png"; // Replace with the path to your image
+marker.nonScaling = true; // This ensures the image size doesn't change with zooming
+marker.tooltipText = "{title}"; // Customize the tooltip as needed
+
+
+var image = customMarker.createChild(am4core.MapImage);
+image.latitude = latitude; // Replace with the latitude of your location
+image.longitude = longitude; // Replace with the longitude of your location
+image.tooltipText = "Your Location"; // Customize the tooltip for this specific marker
+image.nonScaling = true;
+
+// Create the map chart
+var chart = am4core.create("chartdiv", am4maps.MapChart);
+
+// Set the map projection and other properties as needed
+
+// Create custom markers for locations
+var customMarker = chart.series.push(new am4maps.MapImageSeries());
+var marker = customMarker.mapImages.template.createChild(am4core.Image);
+marker.width = 30;
+marker.height = 30;
+marker.href = "path/to/your/image.png";
+marker.nonScaling = true;
+
+// Create and configure a location marker
+var image = customMarker.createChild(am4core.MapImage);
+image.latitude = latitude; // Replace with the latitude of your location
+image.longitude = longitude; // Replace with the longitude of your location
+image.tooltipText = "Your Location";
+
+// Configure flight routes using MapLineSeries or other appropriate series
+
+// Finally, don't forget to call chart.dispose() when done to free up resources
+
+
+
+// Example of defining an Image Series
+var imageSeries = chart.series.push(new am4maps.MapImageSeries());
+
+// Example of creating an image element
+var image = imageSeries.mapImages.template.createChild(am4core.Image);
+
+
+// Example of setting the image source
+image.propertyFields.href = "imageURL"; // imageURL is a field in your data containing image URLs
+
+// Example of setting the location
+imageSeries.mapImages.template.propertyFields.latitude = "latitudeField"; // latitudeField is a field in your data
+imageSeries.mapImages.template.propertyFields.longitude = "longitudeField"; // longitudeField is a field in your data
+
+
 import React from 'react';
 import { Uppy } from '@uppy/core';
 import { Dashboard } from '@uppy/react';
